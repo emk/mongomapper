@@ -3,6 +3,7 @@ module MongoMapper
     class ManyDocumentsAsProxy < ManyDocumentsProxy
       protected
         def scoped_conditions
+          ensure_owner_saved
           {type_key_name => owner.class.name, id_key_name => owner.id}
         end
 

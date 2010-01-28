@@ -29,6 +29,29 @@ class ManyDocumentsProxyTest < Test::Unit::TestCase
     project.statuses.size.should == 1
     project.statuses[0].name.should == "ready"
   end
+
+  should "should not delete unowned objects when updating association" do
+    class Workgroup
+      include MongoMapper::Document
+      many :people, :class_name => 'ManyDocumentsProxyTest::Person', :foreign_key => 'workgroup_id'
+    end
+    Workgroup.collection.remove
+
+    class Person
+      include MongoMapper::Document
+      belongs_to :workgroup, :class_name => 'ManyDocumentsProxyTest::Workgroup'
+    end
+    Person.collection.remove
+
+    Person.create
+    Person.create
+    Person.count.should == 2
+    Workgroup.create(:people => [])
+
+    # We should not have lost the two Person objects that weren't
+    # affiliated with any Workgroup.
+    Person.count.should == 2
+  end
   
   should "correctly assign foreign key when using <<, push and concat" do
     project = Project.new

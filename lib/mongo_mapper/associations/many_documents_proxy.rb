@@ -35,6 +35,9 @@ module MongoMapper
 
       def replace(docs)
         load_target
+        if owner.id.nil?
+          raise "Bug: Tried to delete documents not actually owned by #{self}"
+        end
         target.map(&:destroy)
         docs.each { |doc| apply_scope(doc).save }
         reset
@@ -86,6 +89,7 @@ module MongoMapper
 
       protected
         def scoped_conditions
+          ensure_owner_saved
           {self.foreign_key => owner.id}
         end
         
@@ -98,7 +102,7 @@ module MongoMapper
         end
 
         def ensure_owner_saved
-          owner.save if owner.new?
+          owner.save! if owner.new?
         end
 
         def apply_scope(doc)
